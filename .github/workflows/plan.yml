@@ -17,7 +17,7 @@ on:
           - prod
 
 concurrency:
-  group: core-terraform-${{ inputs.environment }}
+  group: core-terraform-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -27,9 +27,6 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    concurrency:
-      group: core-terraform-${{ inputs.environment }}
-      cancel-in-progress: true
     env:
       ENVIRONMENT: ${{ inputs.environment || 'dev' }}
     defaults:
