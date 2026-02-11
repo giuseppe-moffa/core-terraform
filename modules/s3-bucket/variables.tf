@@ -43,6 +43,18 @@ variable "kms_key_arn" {
   default     = null
 }
 
+variable "noncurrent_expiration_days" {
+  type        = number
+  description = "Days before expiring noncurrent versions"
+  default     = 30
+}
+
+variable "abort_multipart_days" {
+  type        = number
+  description = "Days before aborting incomplete multipart uploads"
+  default     = 7
+}
+
 variable "tags" {
   type        = map(string)
   description = "Additional tags to merge with required defaults"
