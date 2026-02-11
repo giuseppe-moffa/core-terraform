@@ -17,3 +17,12 @@ module "tfpilot_request_example_s3" {
   }
 }
 /* --- tfpilot example s3 end --- */
+# --- tfpilot:begin:req_9E712F ---
+module "s3-bucket" {
+  source = "../../modules/s3-bucket"
+  bucket_name = "dev-assets"
+  region = "eu-west-2"
+  versioning_enabled = true
+  block_public_access = true
+}
+# --- tfpilot:end:req_9E712F ---
