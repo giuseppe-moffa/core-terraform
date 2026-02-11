@@ -10,8 +10,7 @@ on:
         type: string
       environment:
         description: "Environment (dev or prod)"
-        required: false
-        default: dev
+        required: true
         type: choice
         options:
           - dev
@@ -24,14 +23,14 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    concurrency:
-      group: tfpilot-core-${{ env.ENVIRONMENT }}
-      cancel-in-progress: true
     env:
       ENVIRONMENT: ${{ inputs.environment || 'dev' }}
     defaults:
       run:
         working-directory: envs/${{ env.ENVIRONMENT }}
+    concurrency:
+      group: core-terraform-${{ env.ENVIRONMENT }}
+      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
