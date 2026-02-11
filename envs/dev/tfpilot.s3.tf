@@ -17,3 +17,13 @@ module "tfpilot_request_example_s3" {
   }
 }
 /* --- tfpilot example s3 end --- */
+# --- tfpilot:begin:req_CACED2 ---
+module "s3-bucket" {
+  source = "../../modules/s3-bucket"
+  bucket_name = "dev-assets"
+  region = "eu-west-2"
+  access = "public"
+  versioning = true
+  encryption = true
+}
+# --- tfpilot:end:req_CACED2 ---
