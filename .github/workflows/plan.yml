@@ -51,12 +51,17 @@ jobs:
 
       - name: Debug AWS identity and context
         run: |
+          set -euxo pipefail
           aws sts get-caller-identity
           aws configure get region || true
           echo "TF_WORKING_DIR=$(pwd)"
+          terraform version
+          pwd
+          ls -la
 
       - name: Terraform Init
         run: |
+          set -euxo pipefail
           terraform init -input=false \
             -backend-config="bucket=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}" \
             -backend-config="key=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}/envs/${{ env.ENVIRONMENT }}/terraform.tfstate" \
@@ -65,8 +70,15 @@ jobs:
             -backend-config="encrypt=true"
 
       - name: Terraform Plan
-        run: terraform plan -input=false -no-color | tee plan.out
+        run: |
+          set -euxo pipefail
+          terraform plan -input=false -no-color | tee plan.txt
 
-      - name: Upload plan summary
+      - name: Upload plan logs
         if: always()
-        run: cat plan.out
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-logs
+          path: |
+            envs/${{ inputs.environment }}/plan.txt
+            envs/${{ inputs.environment }}/.terraform.lock.hcl
