@@ -17,3 +17,15 @@ module "tfpilot_request_example_s3" {
   }
 }
 /* --- tfpilot example s3 end --- */
+# --- tfpilot:begin:req_D0C78C ---
+module "tfpilot_req_D0C78C" {
+  source = "../../modules/s3-bucket"
+  bucket_name = "core-dev-assets"
+  versioning_enabled = true
+  tags = jsonencode({"ManagedBy":"tfpilot","TfPilotRequestId":"req_D0C78C","Project":"core","Environment":"dev","dev":"assets"})
+  name = "core-dev-assets"
+  project = "core"
+  environment = "dev"
+  request_id = "req_D0C78C"
+}
+# --- tfpilot:end:req_D0C78C ---
