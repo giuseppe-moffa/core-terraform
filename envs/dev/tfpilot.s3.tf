@@ -17,3 +17,19 @@ module "tfpilot_request_example_s3" {
   }
 }
 /* --- tfpilot example s3 end --- */
+# --- tfpilot:begin:265d4cfc-5ff9-4a89-aaad-6f448953707a ---
+module "tfpilot_265d4cfc_5ff9_4a89_aaad_6f448953707a" {
+  source = "../../modules/s3-bucket"
+  name = "dev-assets"
+  versioning_enabled = true
+  project = "core"
+  environment = "dev"
+  request_id = "265d4cfc-5ff9-4a89-aaad-6f448953707a"
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "265d4cfc-5ff9-4a89-aaad-6f448953707a"
+    Project = "core"
+    Environment = "dev"
+  }
+}
+# --- tfpilot:end:265d4cfc-5ff9-4a89-aaad-6f448953707a ---
