@@ -17,7 +17,7 @@ on:
           - prod
 
 concurrency:
-  group: core-terraform-${{ github.workflow }}-${{ github.ref }}
+  group: core-terraform-${{ inputs.environment || 'dev' }}
   cancel-in-progress: true
 
 permissions:
@@ -69,7 +69,7 @@ jobs:
       - name: Terraform Plan
         run: |
           set -euxo pipefail
-          terraform plan -input=false -no-color | tee plan.txt
+          terraform plan -input=false -no-color -lock-timeout=300s | tee plan.txt
 
       - name: Upload plan logs
         if: always()
