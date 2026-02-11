@@ -1,7 +1,6 @@
 name: Terraform Plan
 
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       request_id:
