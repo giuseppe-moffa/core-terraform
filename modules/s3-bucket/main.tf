@@ -101,6 +101,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "default" {
     id     = "default-lifecycle"
     status = "Enabled"
 
+    filter {}
+
     noncurrent_version_expiration {
       noncurrent_days = var.noncurrent_expiration_days
     }
