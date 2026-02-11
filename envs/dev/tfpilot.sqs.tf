@@ -10,7 +10,7 @@ module "tfpilot_request_example_sqs" {
   request_id  = "req-example"
 
   dlq_enabled               = true
-  dlq_max_receive_count     = 5
+  max_receive_count         = 5
   message_retention_seconds = 345600
 
   tags = {

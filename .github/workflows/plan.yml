@@ -24,6 +24,9 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    concurrency:
+      group: tfpilot-core-${{ env.ENVIRONMENT }}
+      cancel-in-progress: true
     env:
       ENVIRONMENT: ${{ inputs.environment || 'dev' }}
     defaults:
@@ -43,8 +46,20 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Debug AWS identity and context
+        run: |
+          aws sts get-caller-identity
+          aws configure get region || true
+          echo "TF_WORKING_DIR=$(pwd)"
+
       - name: Terraform Init
-        run: terraform init -input=false
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}" \
+            -backend-config="key=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}/envs/${{ env.ENVIRONMENT }}/terraform.tfstate" \
+            -backend-config="region=eu-west-2" \
+            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ env.ENVIRONMENT }}" \
+            -backend-config="encrypt=true"
 
       - name: Terraform Plan
         run: terraform plan -input=false -no-color | tee plan.out
