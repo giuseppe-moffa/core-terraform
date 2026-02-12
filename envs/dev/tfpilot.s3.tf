@@ -17,3 +17,20 @@ module "tfpilot_req_dev_s3_8DUBDG" {
   }
 }
 # --- tfpilot:end:req_dev_s3_8DUBDG ---
+# --- tfpilot:begin:req_dev_s3_MW8LBF ---
+module "tfpilot_req_dev_s3_MW8LBF" {
+  source = "../../modules/s3-bucket"
+  bucket_name = "dev-s3-private-ssets"
+  versioning_enabled = false
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_s3_MW8LBF"
+    Project = "core"
+    Environment = "dev"
+  }
+  name = "dev-s3-private-ssets"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_s3_MW8LBF"
+}
+# --- tfpilot:end:req_dev_s3_MW8LBF ---
