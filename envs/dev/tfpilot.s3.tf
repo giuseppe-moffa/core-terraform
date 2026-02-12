@@ -17,3 +17,20 @@ module "tfpilot_req_dev_s3_8DUBDG" {
   }
 }
 # --- tfpilot:end:req_dev_s3_8DUBDG ---
+# --- tfpilot:begin:req_dev_s3_B2RBZJ ---
+module "tfpilot_req_dev_s3_B2RBZJ" {
+  source = "../../modules/s3-bucket"
+  bucket_name = "dev-new-wtp-assets"
+  versioning_enabled = true
+  name = "dev-new-wtp-assets"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_s3_B2RBZJ"
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_s3_B2RBZJ"
+    Project = "core"
+    Environment = "dev"
+  }
+}
+# --- tfpilot:end:req_dev_s3_B2RBZJ ---
