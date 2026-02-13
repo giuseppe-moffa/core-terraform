@@ -1,70 +1,18 @@
 # Managed by TfPilot - do not edit by hand
-# Placeholder removed: example module was provisioning test resources.
-# --- tfpilot:begin:req_dev_s3_8DUBDG ---
-module "tfpilot_req_dev_s3_8DUBDG" {
+# --- tfpilot:begin:req_dev_s3_WQAZU8 ---
+module "tfpilot_req_dev_s3_WQAZU8" {
   source = "../../modules/s3-bucket"
-  bucket_name = "dev-s3-new"
-  versioning_enabled = true
-  name = "dev-s3-new"
-  project = "core"
-  environment = "dev"
-  request_id = "req_dev_s3_8DUBDG"
-  tags = {
-    ManagedBy = "tfpilot"
-    TfPilotRequestId = "req_dev_s3_8DUBDG"
-    Project = "core"
-    Environment = "dev"
-  }
-}
-# --- tfpilot:end:req_dev_s3_8DUBDG ---
-# --- tfpilot:begin:req_dev_s3_MW8LBF ---
-module "tfpilot_req_dev_s3_MW8LBF" {
-  source = "../../modules/s3-bucket"
-  bucket_name = "dev-s3-private-ssets"
+  bucket_name = "tfpilot-dev-assets"
   versioning_enabled = false
-  tags = {
-    ManagedBy = "tfpilot"
-    TfPilotRequestId = "req_dev_s3_MW8LBF"
-    Project = "core"
-    Environment = "dev"
-  }
-  name = "dev-s3-private-ssets"
+  name = "tfpilot-dev-assets"
   project = "core"
   environment = "dev"
-  request_id = "req_dev_s3_MW8LBF"
-}
-# --- tfpilot:end:req_dev_s3_MW8LBF ---
-# --- tfpilot:begin:req_dev_s3_J5VE3J ---
-module "tfpilot_req_dev_s3_J5VE3J" {
-  source = "../../modules/s3-bucket"
-  bucket_name = "dev-s3-wtp-assets"
-  versioning_enabled = true
-  name = "dev-s3-wtp-assets"
-  project = "core"
-  environment = "dev"
-  request_id = "req_dev_s3_J5VE3J"
+  request_id = "req_dev_s3_WQAZU8"
   tags = {
     ManagedBy = "tfpilot"
-    TfPilotRequestId = "req_dev_s3_J5VE3J"
+    TfPilotRequestId = "req_dev_s3_WQAZU8"
     Project = "core"
     Environment = "dev"
   }
 }
-# --- tfpilot:end:req_dev_s3_J5VE3J ---
-# --- tfpilot:begin:req_dev_s3_XH8YN6 ---
-module "tfpilot_req_dev_s3_XH8YN6" {
-  source = "../../modules/s3-bucket"
-  bucket_name = "core-dev-s3-assets"
-  versioning_enabled = true
-  tags = {
-    ManagedBy = "tfpilot"
-    TfPilotRequestId = "req_dev_s3_XH8YN6"
-    Project = "core"
-    Environment = "dev"
-  }
-  name = "core-dev-s3-assets"
-  project = "core"
-  environment = "dev"
-  request_id = "req_dev_s3_XH8YN6"
-}
-# --- tfpilot:end:req_dev_s3_XH8YN6 ---
+# --- tfpilot:end:req_dev_s3_WQAZU8 ---

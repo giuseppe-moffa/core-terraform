@@ -1,11 +1,11 @@
-name: Terraform Apply
+name: Terraform Destroy
 
 on:
   workflow_dispatch:
     inputs:
       request_id:
-        description: "Request ID (optional)"
-        required: false
+        description: "Request ID"
+        required: true
         type: string
       environment:
         description: "Environment (dev or prod)"
@@ -16,7 +16,7 @@ on:
           - prod
 
 concurrency:
-  group: core-terraform-${{ inputs.environment || 'dev' }}
+  group: core-terraform-destroy-${{ inputs.environment || 'dev' }}
   cancel-in-progress: true
 
 permissions:
@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  apply:
+  destroy:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: ${{ inputs.environment || 'dev' }}
@@ -40,17 +40,15 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
           aws-region: eu-west-2
-          role-session-name: tfplan-apply
+          role-session-name: tfplan-destroy
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Debug AWS identity and context
+      - name: Debug context
         run: |
           set -euxo pipefail
           aws sts get-caller-identity
-          aws configure get region || true
-          echo "TF_WORKING_DIR=$(pwd)"
           terraform version
           pwd
           ls -la
@@ -65,16 +63,15 @@ jobs:
             -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ env.ENVIRONMENT }}" \
             -backend-config="encrypt=true"
 
-      - name: Terraform Apply
+      - name: Terraform Destroy (target module)
         run: |
           set -euxo pipefail
-          terraform apply -input=false -auto-approve -lock-timeout=300s | tee apply.txt
+          terraform destroy -input=false -auto-approve -lock-timeout=300s -target="module.tfpilot_${{ inputs.request_id }}"
 
-      - name: Upload apply logs
+      - name: Upload destroy logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: apply-logs
+          name: destroy-logs
           path: |
-            apply.txt
-            envs/${{ env.ENVIRONMENT }}/.terraform.lock.hcl
+            envs/${{ inputs.environment }}/.terraform.lock.hcl
