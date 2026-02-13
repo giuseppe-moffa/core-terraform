@@ -77,7 +77,7 @@ jobs:
           BR="cleanup/${{ inputs.request_id }}"
           git checkout -b "$BR"
           git commit -m "Cleanup request ${{ inputs.request_id }}"
-          git push origin "$BR"
+          git push --force-with-lease origin "$BR"
           echo "branch=$BR" >> $GITHUB_OUTPUT
 
       - name: Create PR
