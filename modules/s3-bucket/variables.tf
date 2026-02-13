@@ -31,6 +31,18 @@ variable "versioning_enabled" {
   default     = true
 }
 
+variable "block_public_access" {
+  type        = bool
+  description = "Block all public access"
+  default     = true
+}
+
+variable "enable_lifecycle" {
+  type        = bool
+  description = "Enable lifecycle config for noncurrent versions and multipart cleanup"
+  default     = true
+}
+
 variable "force_destroy" {
   type        = bool
   description = "Allow force destroy of bucket"
