@@ -16,7 +16,7 @@ on:
           - prod
 
 concurrency:
-  group: core-terraform-${{ inputs.environment || 'dev' }}
+  group: core-terraform-${{ inputs.environment || 'dev' }}-${{ inputs.request_id || 'global' }}
   cancel-in-progress: true
 
 permissions:

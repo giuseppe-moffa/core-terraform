@@ -25,23 +25,34 @@ on:
         description: "Auto-merge when not prod"
         required: false
         default: "false"
+      ref:
+        description: "Git ref (commit/branch) to checkout (defaults to target_base)"
+        required: false
+        default: ""
+      dry_run:
+        description: "If true, skip pushing/PR creation (plan only)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
   pull-requests: write
 
 concurrency:
-  group: cleanup-${{ inputs.request_id }}
+  group: core-terraform-${{ inputs.environment || 'dev' }}-${{ inputs.request_id }}
   cancel-in-progress: false
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'prod' && 'production' || 'nonprod' }}
+    env:
+      DRY_RUN: ${{ inputs.dry_run || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.target_base }}
+          ref: ${{ inputs.ref || inputs.target_base }}
 
       - name: Configure git
         run: |
@@ -55,30 +66,36 @@ jobs:
           count=$(wc -l < paths.txt || true)
           echo "count=$count" >> $GITHUB_OUTPUT
 
-      - name: Remove files
-        if: steps.paths.outputs.count != '0'
-        run: |
-          while IFS= read -r p; do
-            if [ -e "$p" ]; then
-              git rm -r "$p"
-              echo "Removed $p"
-            else
-              echo "Path not found, skipping: $p"
-            fi
-          done < paths.txt
-
       - name: Create branch and commit
         id: commit
         run: |
+          BR="cleanup/${{ inputs.request_id }}"
+          git fetch origin "$BR" || true
+          if git ls-remote --exit-code origin "$BR" >/dev/null 2>&1; then
+            git checkout -B "$BR" "origin/$BR"
+          else
+            git checkout -B "$BR" "${{ inputs.target_base }}"
+          fi
+          if [ -s paths.txt ]; then
+            while IFS= read -r p; do
+              if [ -e "$p" ]; then
+                git rm -r "$p"
+                echo "Removed $p"
+              else
+                echo "Path not found, skipping: $p"
+              fi
+            done < paths.txt
+          fi
           if git diff --cached --quiet; then
             echo "no_changes=true" >> $GITHUB_OUTPUT
             exit 0
           fi
-          BR="cleanup/${{ inputs.request_id }}"
-          git fetch origin "$BR" || true
-          git checkout -B "$BR" "${{ inputs.target_base }}"
           git commit -m "Cleanup request ${{ inputs.request_id }}"
-          git push --force origin "$BR"
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run: skipping push/PR"
+            exit 0
+          fi
+          git push origin "$BR"
           echo "branch=$BR" >> $GITHUB_OUTPUT
 
       - name: Create PR
