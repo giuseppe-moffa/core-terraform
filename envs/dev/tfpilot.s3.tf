@@ -51,3 +51,20 @@ module "tfpilot_req_dev_s3_J5VE3J" {
   }
 }
 # --- tfpilot:end:req_dev_s3_J5VE3J ---
+# --- tfpilot:begin:req_dev_s3_XH8YN6 ---
+module "tfpilot_req_dev_s3_XH8YN6" {
+  source = "../../modules/s3-bucket"
+  bucket_name = "core-dev-s3-assets"
+  versioning_enabled = true
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_s3_XH8YN6"
+    Project = "core"
+    Environment = "dev"
+  }
+  name = "core-dev-s3-assets"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_s3_XH8YN6"
+}
+# --- tfpilot:end:req_dev_s3_XH8YN6 ---
