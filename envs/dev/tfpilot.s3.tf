@@ -16,3 +16,22 @@ module "tfpilot_req_dev_s3_WQAZU8" {
   }
 }
 # --- tfpilot:end:req_dev_s3_WQAZU8 ---
+# --- tfpilot:begin:req_dev_s3_7KNFWC ---
+module "tfpilot_req_dev_s3_7KNFWC" {
+  source = "../../modules/s3-bucket"
+  bucket_name = "tfpilot-dev-s3-bucket"
+  versioning_enabled = false
+  block_public_access = false
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_s3_7KNFWC"
+    Project = "core"
+    Environment = "dev"
+  }
+  enable_lifecycle = true
+  name = "tfpilot-dev-s3-bucket"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_s3_7KNFWC"
+}
+# --- tfpilot:end:req_dev_s3_7KNFWC ---
