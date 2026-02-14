@@ -53,7 +53,24 @@ variable "kms_key_arn" {
   type        = string
   description = "KMS key ARN for bucket encryption; null for SSE-S3"
   default     = null
+
+  validation {
+    condition = lower(var.encryption_mode) != "sse-kms" ? true : (var.kms_key_arn != null && var.kms_key_arn != "")
+    error_message = "kms_key_arn is required when encryption_mode is sse-kms."
+  }
 }
+
+variable "encryption_mode" {
+  type        = string
+  description = "Encryption mode: sse-s3 (default) or sse-kms"
+  default     = "sse-s3"
+
+  validation {
+    condition     = contains(["sse-s3", "sse-kms"], lower(var.encryption_mode))
+    error_message = "encryption_mode must be one of: sse-s3, sse-kms."
+  }
+}
+
 
 variable "noncurrent_expiration_days" {
   type        = number
