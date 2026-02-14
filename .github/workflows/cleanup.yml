@@ -68,15 +68,14 @@ jobs:
 
       - name: Remove tfpilot blocks
         run: |
-          REQ="${{ inputs.request_id }}"
           if [ ! -s paths.txt ]; then
             echo "No cleanup paths provided; skipping removal"
             exit 0
           fi
-          python - <<'PY'
-import pathlib
+          python - "$REQ" <<'PY'
+import pathlib, sys
 
-req_id = "${REQ}"
+req_id = sys.argv[1]
 marker_start = f"# --- tfpilot:begin:{req_id} ---"
 marker_end = f"# --- tfpilot:end:{req_id} ---"
 
@@ -107,6 +106,8 @@ for p in paths:
     else:
         print(f"Skipping non-TF path {p}; no removal performed")
 PY
+        env:
+          REQ: ${{ inputs.request_id }}
 
       - name: Create branch and commit
         id: commit
