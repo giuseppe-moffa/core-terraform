@@ -3,7 +3,6 @@ locals {
     var.project,
     var.environment,
     var.name,
-    var.request_id != "" ? var.request_id : null,
   ])))
 
   bucket_name = coalesce(var.bucket_name, substr(replace(local.base_bucket_name, "/[^a-z0-9-]/", ""), 0, 63))
