@@ -1,4 +1,4 @@
-name: cleanup
+name: Terraform Cleanup
 
 on:
   workflow_dispatch:
@@ -74,7 +74,7 @@ jobs:
             exit 0
           fi
           python - <<'PY'
-import pathlib, sys
+import pathlib
 
 req_id = "${REQ}"
 marker_start = f"# --- tfpilot:begin:{req_id} ---"
@@ -82,7 +82,7 @@ marker_end = f"# --- tfpilot:end:{req_id} ---"
 
 paths = [p.strip() for p in pathlib.Path("paths.txt").read_text().splitlines() if p.strip()]
 
-          for p in paths:
+for p in paths:
     path = pathlib.Path(p)
     if not path.exists():
         print(f"Path not found, skipping: {p}")
@@ -95,12 +95,11 @@ paths = [p.strip() for p in pathlib.Path("paths.txt").read_text().splitlines() i
             end_line = text.find("\n", end)
             if end_line == -1:
                 end_line = len(text)
-            new_text = (text[:start] + text[end_line + 1 :])
+            new_text = text[:start] + text[end_line + 1 :]
             if new_text.strip():
                 path.write_text(new_text)
                 print(f"Removed tfpilot block for {req_id} from {p}")
             else:
-                # Keep the file with a newline to avoid deletion
                 path.write_text("\n")
                 print(f"Block removed; {p} left as empty file")
         else:
