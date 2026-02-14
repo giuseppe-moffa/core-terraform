@@ -73,38 +73,38 @@ jobs:
             exit 0
           fi
           python <<'PY'
-            import pathlib, os
+          import pathlib, os
 
-            req_id = os.environ.get("REQ", "")
-            marker_start = f"# --- tfpilot:begin:{req_id} ---"
-            marker_end = f"# --- tfpilot:end:{req_id} ---"
+          req_id = os.environ.get("REQ", "")
+          marker_start = f"# --- tfpilot:begin:{req_id} ---"
+          marker_end = f"# --- tfpilot:end:{req_id} ---"
 
-            paths = [p.strip() for p in pathlib.Path("paths.txt").read_text().splitlines() if p.strip()]
+          paths = [p.strip() for p in pathlib.Path("paths.txt").read_text().splitlines() if p.strip()]
 
-            for p in paths:
-                path = pathlib.Path(p)
-                if not path.exists():
-                    print(f"Path not found, skipping: {p}")
-                    continue
-                if path.suffix == ".tf":
-                    text = path.read_text()
-                    start = text.find(marker_start)
-                    end = text.find(marker_end)
-                    if start != -1 and end != -1:
-                        end_line = text.find("\n", end)
-                        if end_line == -1:
-                            end_line = len(text)
-                        new_text = text[:start] + text[end_line + 1 :]
-                        if new_text.strip():
-                            path.write_text(new_text)
-                            print(f"Removed tfpilot block for {req_id} from {p}")
-                        else:
-                            path.write_text("\n")
-                            print(f"Block removed; {p} left as empty file")
-                    else:
-                        print(f"Markers not found in {p}, leaving file untouched")
-                else:
-                    print(f"Skipping non-TF path {p}; no removal performed")
+          for p in paths:
+              path = pathlib.Path(p)
+              if not path.exists():
+                  print(f"Path not found, skipping: {p}")
+                  continue
+              if path.suffix == ".tf":
+                  text = path.read_text()
+                  start = text.find(marker_start)
+                  end = text.find(marker_end)
+                  if start != -1 and end != -1:
+                      end_line = text.find("\n", end)
+                      if end_line == -1:
+                          end_line = len(text)
+                      new_text = text[:start] + text[end_line + 1 :]
+                      if new_text.strip():
+                          path.write_text(new_text)
+                          print(f"Removed tfpilot block for {req_id} from {p}")
+                      else:
+                          path.write_text("\n")
+                          print(f"Block removed; {p} left as empty file")
+                  else:
+                      print(f"Markers not found in {p}, leaving file untouched")
+              else:
+                  print(f"Skipping non-TF path {p}; no removal performed")
           PY
         env:
           REQ: ${{ inputs.request_id }}
