@@ -40,7 +40,7 @@ variable "block_public_access" {
 variable "enable_lifecycle" {
   type        = bool
   description = "Enable lifecycle config for noncurrent versions and multipart cleanup"
-  default     = true
+  default     = false
 }
 
 variable "force_destroy" {
