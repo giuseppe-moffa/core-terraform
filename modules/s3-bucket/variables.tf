@@ -76,12 +76,22 @@ variable "noncurrent_expiration_days" {
   type        = number
   description = "Days before expiring noncurrent versions"
   default     = 30
+
+  validation {
+    condition     = var.noncurrent_expiration_days >= 1 && var.noncurrent_expiration_days <= 3650
+    error_message = "noncurrent_expiration_days must be between 1 and 3650."
+  }
 }
 
 variable "abort_multipart_days" {
   type        = number
   description = "Days before aborting incomplete multipart uploads"
   default     = 7
+
+  validation {
+    condition     = var.abort_multipart_days >= 1 && var.abort_multipart_days <= 365
+    error_message = "abort_multipart_days must be between 1 and 365."
+  }
 }
 
 variable "tags" {
