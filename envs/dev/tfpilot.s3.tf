@@ -23,3 +23,26 @@ module "tfpilot_req_dev_s3_G7NFNM" {
   }
 }
 # --- tfpilot:end:req_dev_s3_G7NFNM ---
+# --- tfpilot:begin:req_dev_s3_73Q4SN ---
+module "tfpilot_req_dev_s3_73Q4SN" {
+  source = "../../modules/s3-bucket"
+  name = "core-sftp-73q4sn"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_s3_73Q4SN"
+  bucket_name = "core-sftp-73q4sn"
+  versioning_enabled = true
+  force_destroy = false
+  block_public_access = true
+  enable_lifecycle = false
+  noncurrent_expiration_days = 30
+  abort_multipart_days = 7
+  encryption_mode = "sse-s3"
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_s3_73Q4SN"
+    Project = "core"
+    Environment = "dev"
+  }
+}
+# --- tfpilot:end:req_dev_s3_73Q4SN ---
