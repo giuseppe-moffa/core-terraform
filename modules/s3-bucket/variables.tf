@@ -62,12 +62,12 @@ variable "kms_key_arn" {
 
 variable "encryption_mode" {
   type        = string
-  description = "Encryption mode: sse-s3 (default) or sse-kms"
+  description = "Encryption mode: sse-s3 (AES256), sse-kms-aws-managed (aws/s3), or sse-kms-cmk (customer-managed key)"
   default     = "sse-s3"
 
   validation {
-    condition     = contains(["sse-s3", "sse-kms"], lower(var.encryption_mode))
-    error_message = "encryption_mode must be one of: sse-s3, sse-kms."
+    condition     = contains(["sse-s3", "sse-kms-aws-managed", "sse-kms-cmk"], lower(var.encryption_mode))
+    error_message = "encryption_mode must be one of: sse-s3, sse-kms-aws-managed, sse-kms-cmk."
   }
 }
 

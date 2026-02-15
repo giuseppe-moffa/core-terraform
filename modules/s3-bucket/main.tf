@@ -43,8 +43,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm     = lower(var.encryption_mode) == "sse-kms" ? "aws:kms" : "AES256"
-      kms_master_key_id = lower(var.encryption_mode) == "sse-kms" ? var.kms_key_arn : null
+      sse_algorithm = lower(var.encryption_mode) == "sse-s3" ? "AES256" : "aws:kms"
+      kms_master_key_id = lower(var.encryption_mode) == "sse-kms-cmk" ? var.kms_key_arn : null
     }
   }
 }
