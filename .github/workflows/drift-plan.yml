@@ -1,0 +1,120 @@
+name: Drift Plan
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "Request ID (required)"
+        required: true
+        type: string
+      environment:
+        description: "Environment (dev or prod)"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+concurrency:
+  group: core-terraform-${{ inputs.environment || 'dev' }}-${{ inputs.request_id || 'global' }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  drift-plan:
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      REQUEST_ID: ${{ inputs.request_id }}
+      TFPILOT_API_URL: ${{ secrets.TFPILOT_API_URL || 'https://tfpilot.example.com' }}
+    defaults:
+      run:
+        working-directory: envs/${{ env.ENVIRONMENT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
+          aws-region: eu-west-2
+          role-session-name: tfplan-drift
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: |
+          set -euxo pipefail
+          terraform init -input=false \
+            -backend-config="bucket=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}" \
+            -backend-config="key=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}/envs/${{ env.ENVIRONMENT }}/terraform.tfstate" \
+            -backend-config="region=eu-west-2" \
+            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ env.ENVIRONMENT }}" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Plan (Drift Detection)
+        id: plan
+        continue-on-error: true
+        run: |
+          set +e
+          terraform plan -input=false -no-color -lock-timeout=300s -detailed-exitcode | tee plan.txt
+          PLAN_EXIT=$?
+          echo "plan_exit_code=$PLAN_EXIT" >> $GITHUB_OUTPUT
+          set -e
+
+      - name: Determine Drift Status
+        id: drift
+        run: |
+          PLAN_EXIT=${{ steps.plan.outputs.plan_exit_code }}
+          # terraform plan with -detailed-exitcode returns:
+          # 0 = no changes, 1 = error, 2 = changes detected
+          if [ "$PLAN_EXIT" = "2" ]; then
+            echo "has_drift=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_drift=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Extract plan summary for reporting
+          if grep -q "Plan:" plan.txt 2>/dev/null; then
+            PLAN_SUMMARY=$(grep -A 5 "Plan:" plan.txt | head -6 | tr '\n' ' ' | sed 's/  */ /g' || echo "")
+            echo "plan_summary<<EOF" >> $GITHUB_OUTPUT
+            echo "$PLAN_SUMMARY" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Report Drift Result to TfPilot
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          RUN_ID=${{ github.run_id }}
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          HAS_DRIFT=${{ steps.drift.outputs.has_drift }}
+          PLAN_SUMMARY="${{ steps.plan.outputs.plan_summary }}"
+          
+          curl -X POST "${TFPILOT_API_URL}/api/requests/${REQUEST_ID}/drift-result" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -d "{
+              \"runId\": ${RUN_ID},
+              \"runUrl\": \"${RUN_URL}\",
+              \"hasDrift\": ${HAS_DRIFT},
+              \"summary\": \"${PLAN_SUMMARY}\"
+            }" || echo "Failed to report drift result (non-fatal)"
+
+      - name: Upload plan logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-plan-logs
+          path: |
+            plan.txt
+            envs/${{ inputs.environment }}/.terraform.lock.hcl
