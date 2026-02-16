@@ -13,7 +13,7 @@ jobs:
   enumerate-and-check:
     runs-on: ubuntu-latest
     env:
-      TFPILOT_API_URL: ${{ secrets.TFPILOT_API_URL || 'https://tfpilot.example.com' }}
+      TFPILOT_API_URL: ${{ secrets.TFPILOT_API_URL || 'https://tfpilot.com' }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Fetch Eligible Requests
