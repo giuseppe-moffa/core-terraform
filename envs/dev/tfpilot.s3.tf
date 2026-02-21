@@ -25,3 +25,27 @@ module "tfpilot_req_dev_s3_RCL5JW" {
   }
 }
 # --- tfpilot:end:req_dev_s3_RCL5JW ---
+# --- tfpilot:begin:req_dev_s3_WKUPN4 ---
+module "tfpilot_req_dev_s3_WKUPN4" {
+  source = "../../modules/s3-bucket"
+  name = "core-public-assets-wkupn4"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_s3_WKUPN4"
+  bucket_name = "core-public-assets-wkupn4"
+  versioning_enabled = true
+  force_destroy = false
+  block_public_access = false
+  enable_lifecycle = false
+  noncurrent_expiration_days = 30
+  abort_multipart_days = 7
+  encryption_mode = "sse-s3"
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_s3_WKUPN4"
+    Project = "core"
+    Environment = "dev"
+    purpose = "public-assets"
+  }
+}
+# --- tfpilot:end:req_dev_s3_WKUPN4 ---
