@@ -24,7 +24,8 @@ module "tfpilot_req_dev_s3_RCL5JW" {
     purpose = "public-assets"
   }
 }
-# --- tfpilot:end:req_dev_s3_RCL5JW ---# --- tfpilot:begin:req_dev_s3_YFVYXS ---
+# --- tfpilot:end:req_dev_s3_RCL5JW ---
+# --- tfpilot:begin:req_dev_s3_YFVYXS ---
 module "tfpilot_req_dev_s3_YFVYXS" {
   source = "../../modules/s3-bucket"
   name = "core-assets-s3-yfvyxs"
@@ -46,7 +47,8 @@ module "tfpilot_req_dev_s3_YFVYXS" {
     Environment = "dev"
   }
 }
-# --- tfpilot:end:req_dev_s3_YFVYXS ---# --- tfpilot:begin:req_dev_s3_WKUPN4 ---
+# --- tfpilot:end:req_dev_s3_YFVYXS ---
+# --- tfpilot:begin:req_dev_s3_WKUPN4 ---
 module "tfpilot_req_dev_s3_WKUPN4" {
   source = "../../modules/s3-bucket"
   name = "core-public-assets-wkupn4"
@@ -69,7 +71,8 @@ module "tfpilot_req_dev_s3_WKUPN4" {
     purpose = "public-assets"
   }
 }
-# --- tfpilot:end:req_dev_s3_WKUPN4 ---# --- tfpilot:begin:req_dev_s3_Q6VNMB ---
+# --- tfpilot:end:req_dev_s3_WKUPN4 ---
+# --- tfpilot:begin:req_dev_s3_Q6VNMB ---
 module "tfpilot_req_dev_s3_Q6VNMB" {
   source = "../../modules/s3-bucket"
   name = "core-sftp-q6vnmb"
@@ -92,5 +95,3 @@ module "tfpilot_req_dev_s3_Q6VNMB" {
   }
 }
 # --- tfpilot:end:req_dev_s3_Q6VNMB ---
-# --- tfpilot:end:req_dev_s3_G7NFNM ---
-# --- tfpilot:end:req_dev_s3_G7NFNM ---
