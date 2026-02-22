@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       request_id:
-        description: "Request ID (optional)"
-        required: false
+        description: "TfPilot request ID"
+        required: true
         type: string
       environment:
         description: "Environment (dev or prod)"
@@ -68,7 +68,8 @@ jobs:
       - name: Terraform Plan
         run: |
           set -euxo pipefail
-          terraform plan -input=false -no-color -lock-timeout=300s | tee plan.txt
+          terraform plan -input=false -no-color -lock-timeout=300s -out=tfplan.binary | tee plan.txt
+          terraform show -json tfplan.binary > plan.json
 
       - name: Upload plan logs
         if: always()
@@ -76,5 +77,120 @@ jobs:
         with:
           name: plan-logs
           path: |
-            plan.txt
+            envs/${{ inputs.environment }}/plan.txt
+            envs/${{ inputs.environment }}/plan.json
             envs/${{ inputs.environment }}/.terraform.lock.hcl
+
+  infracost:
+    name: Infracost cost estimation
+    runs-on: ubuntu-latest
+    needs: plan
+    if: needs.plan.result == 'success'
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    env:
+      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Terraform file changes
+        id: tf-changes
+        run: |
+          git fetch origin main --depth=1 2>/dev/null || git fetch origin master --depth=1 2>/dev/null || true
+          BASE=origin/main
+          git show-ref -q refs/remotes/origin/main || BASE=origin/master
+          if git diff --name-only $BASE...HEAD -- '**/*.tf' '**/*.tfvars' '**/*.tfvars.json' | grep -q .; then
+            echo "has_tf_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_tf_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Infracost
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Download plan artifact
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: plan-logs
+
+      - name: Generate Infracost cost JSON
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        run: |
+          PLAN_JSON="plan-logs/envs/${{ env.ENVIRONMENT }}/plan.json"
+          if [ ! -f "$PLAN_JSON" ]; then
+            echo "::warning::Plan JSON not found at $PLAN_JSON, listing artifact:"
+            find plan-logs -type f
+            exit 1
+          fi
+          infracost breakdown --path="$PLAN_JSON" --format=json --out-file=infracost-cost.json
+
+      - name: Generate Infracost diff JSON
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        run: |
+          PLAN_JSON="plan-logs/envs/${{ env.ENVIRONMENT }}/plan.json"
+          infracost diff --path="$PLAN_JSON" --format=json --out-file=infracost-diff.json
+
+      - name: Upload Infracost artifacts
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: infracost-cost.json
+          path: infracost-cost.json
+
+      - name: Upload Infracost diff artifact
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: infracost-diff.json
+          path: infracost-diff.json
+
+      - name: Configure AWS credentials (for S3 upload)
+        if: steps.tf-changes.outputs.has_tf_changes == 'true' && inputs.request_id != ''
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
+          aws-region: eu-west-2
+          role-session-name: tfplan-infracost-s3
+
+      - name: Upload Infracost results to S3
+        if: steps.tf-changes.outputs.has_tf_changes == 'true' && inputs.request_id != ''
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+          REQUESTS_BUCKET: ${{ vars.TFPILOT_REQUESTS_BUCKET || 'tfpilot-requests' }}
+        run: |
+          if [ -z "$REQUEST_ID" ]; then exit 0; fi
+          if [ ! -f infracost-cost.json ] || [ ! -f infracost-diff.json ]; then
+            echo "Infracost JSON files not found, skipping S3 upload"
+            exit 0
+          fi
+          aws s3 cp infracost-cost.json "s3://${REQUESTS_BUCKET}/requests/${REQUEST_ID}/cost/infracost-cost.json" --content-type "application/json"
+          aws s3 cp infracost-diff.json "s3://${REQUESTS_BUCKET}/requests/${REQUEST_ID}/cost/infracost-diff.json" --content-type "application/json"
+          echo "Uploaded cost artifacts to s3://${REQUESTS_BUCKET}/requests/${REQUEST_ID}/cost/"
+
+      - name: Get PR number
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        id: pr
+        run: |
+          PR_NUM=$(gh pr list --head "${{ github.head_ref || github.ref_name }}" --state open --json number -q '.[0].number' 2>/dev/null || echo "")
+          echo "number=${PR_NUM}" >> $GITHUB_OUTPUT
+          echo "PR number: ${PR_NUM}"
+
+      - name: Post Infracost PR comment
+        if: steps.tf-changes.outputs.has_tf_changes == 'true' && steps.pr.outputs.number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          infracost comment github --path=infracost-diff.json \
+            --repo=${{ github.repository }} \
+            --github-token="$GITHUB_TOKEN" \
+            --pull-request=${{ steps.pr.outputs.number }} \
+            --behavior=update
