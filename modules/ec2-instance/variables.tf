@@ -56,7 +56,7 @@ variable "ami_id" {
 variable "ami_ssm_param" {
   type        = string
   description = "SSM parameter name for AMI ID (e.g., /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64). Used when ami_id is empty."
-  default     = ""
+  default     = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 
   validation {
     condition     = var.ami_id != "" || var.ami_ssm_param != ""
