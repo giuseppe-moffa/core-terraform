@@ -125,10 +125,10 @@ jobs:
       - name: Generate Infracost cost JSON
         if: steps.tf-changes.outputs.has_tf_changes == 'true'
         run: |
-          PLAN_JSON="plan-logs/envs/${{ env.ENVIRONMENT }}/plan.json"
+          PLAN_JSON="envs/${{ env.ENVIRONMENT }}/plan.json"
           if [ ! -f "$PLAN_JSON" ]; then
-            echo "::warning::Plan JSON not found at $PLAN_JSON, listing artifact:"
-            find plan-logs -type f
+            echo "::warning::Plan JSON not found at $PLAN_JSON, listing workspace:"
+            find . -name "plan.json" 2>/dev/null || true
             exit 1
           fi
           infracost breakdown --path="$PLAN_JSON" --format=json --out-file=infracost-cost.json
@@ -136,7 +136,7 @@ jobs:
       - name: Generate Infracost diff JSON
         if: steps.tf-changes.outputs.has_tf_changes == 'true'
         run: |
-          PLAN_JSON="plan-logs/envs/${{ env.ENVIRONMENT }}/plan.json"
+          PLAN_JSON="envs/${{ env.ENVIRONMENT }}/plan.json"
           infracost diff --path="$PLAN_JSON" --format=json --out-file=infracost-diff.json
 
       - name: Upload Infracost artifacts
