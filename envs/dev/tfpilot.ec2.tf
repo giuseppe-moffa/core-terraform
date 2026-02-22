@@ -1,1 +1,26 @@
 # Managed by TfPilot - do not edit by hand
+# --- tfpilot:begin:req_dev_ec2_gebcvg ---
+module "tfpilot_req_dev_ec2_gebcvg" {
+  source = "../../modules/ec2-instance"
+  name = "ai-agent-klkvm9-gebcvg"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_ec2_gebcvg"
+  instance_type = "t3.micro"
+  network_preset = "shared-public"
+  associate_public_ip_address = false
+  root_volume_size_gb = 8
+  monitoring = true
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_ec2_gebcvg"
+    Project = "core"
+    Environment = "dev"
+    "tfpilot:request_id" = "req_dev_ec2_gebcvg"
+    "tfpilot:project" = "core"
+    "tfpilot:environment" = "dev"
+    "tfpilot:created_by" = "giuseppe-moffa"
+    "tfpilot:template_id" = "dev-compute"
+  }
+}
+# --- tfpilot:end:req_dev_ec2_gebcvg ---
