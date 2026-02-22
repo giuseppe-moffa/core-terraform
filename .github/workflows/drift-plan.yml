@@ -92,7 +92,7 @@ jobs:
       - name: Report Drift Result to TfPilot
         if: always()
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TFPILOT_WEBHOOK_SECRET: ${{ secrets.TFPILOT_WEBHOOK_SECRET }}
         run: |
           set -euxo pipefail
           RUN_ID=${{ github.run_id }}
@@ -100,9 +100,14 @@ jobs:
           HAS_DRIFT=${{ steps.drift.outputs.has_drift }}
           PLAN_SUMMARY="${{ steps.plan.outputs.plan_summary }}"
           
+          if [ -z "$TFPILOT_WEBHOOK_SECRET" ]; then
+            echo "Warning: TFPILOT_WEBHOOK_SECRET not set, skipping drift result reporting"
+            exit 0
+          fi
+          
           curl -X POST "${TFPILOT_API_URL}/api/requests/${REQUEST_ID}/drift-result" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-TfPilot-Secret: ${TFPILOT_WEBHOOK_SECRET}" \
             -d "{
               \"runId\": ${RUN_ID},
               \"runUrl\": \"${RUN_URL}\",

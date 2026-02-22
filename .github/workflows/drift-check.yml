@@ -18,9 +18,15 @@ jobs:
     steps:
       - name: Fetch Eligible Requests
         id: fetch
+        env:
+          TFPILOT_WEBHOOK_SECRET: ${{ secrets.TFPILOT_WEBHOOK_SECRET }}
         run: |
           set -euxo pipefail
-          RESPONSE=$(curl -s "${TFPILOT_API_URL}/api/requests/drift-eligible" || echo '{"success":false,"requests":[]}')
+          if [ -z "$TFPILOT_WEBHOOK_SECRET" ]; then
+            echo "Error: TFPILOT_WEBHOOK_SECRET not set"
+            exit 1
+          fi
+          RESPONSE=$(curl -s -H "X-TfPilot-Secret: ${TFPILOT_WEBHOOK_SECRET}" "${TFPILOT_API_URL}/api/requests/drift-eligible" || echo '{"success":false,"requests":[]}')
           echo "eligible_requests<<EOF" >> $GITHUB_OUTPUT
           echo "$RESPONSE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
