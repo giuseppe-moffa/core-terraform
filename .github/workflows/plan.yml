@@ -188,9 +188,9 @@ jobs:
             echo "Infracost JSON files not found, skipping S3 upload"
             exit 0
           fi
-          aws s3 cp infracost-cost.json "s3://${REQUESTS_BUCKET}/requests/${REQUEST_ID}/cost/infracost-cost.json" --content-type "application/json"
-          aws s3 cp infracost-diff.json "s3://${REQUESTS_BUCKET}/requests/${REQUEST_ID}/cost/infracost-diff.json" --content-type "application/json"
-          echo "Uploaded cost artifacts to s3://${REQUESTS_BUCKET}/requests/${REQUEST_ID}/cost/"
+          aws s3 cp infracost-cost.json "s3://${REQUESTS_BUCKET}/cost/${REQUEST_ID}/infracost-cost.json" --content-type "application/json"
+          aws s3 cp infracost-diff.json "s3://${REQUESTS_BUCKET}/cost/${REQUEST_ID}/infracost-diff.json" --content-type "application/json"
+          echo "Uploaded cost artifacts to s3://${REQUESTS_BUCKET}/cost/${REQUEST_ID}/"
 
       - name: Get PR number
         if: steps.tf-changes.outputs.has_tf_changes == 'true'
