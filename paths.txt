@@ -1,1 +1,1 @@
-envs/dev/tfpilot.ec2.tf
+envs/dev/tfpilot.s3.tf
