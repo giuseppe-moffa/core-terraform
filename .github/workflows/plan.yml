@@ -107,6 +107,11 @@ jobs:
           set +e
           OUT=$(git diff --name-only $BASE...HEAD -- '**/*.tf' '**/*.tfvars' '**/*.tfvars.json' 2>/dev/null)
           DIFF_EXIT=$?
+          if [ $DIFF_EXIT -ne 0 ]; then
+            git fetch origin main 2>/dev/null || git fetch origin master 2>/dev/null || true
+            OUT=$(git diff --name-only $BASE...HEAD -- '**/*.tf' '**/*.tfvars' '**/*.tfvars.json' 2>/dev/null)
+            DIFF_EXIT=$?
+          fi
           set -e
           if [ $DIFF_EXIT -ne 0 ] || echo "$OUT" | grep -q .; then
             echo "has_tf_changes=true" >> $GITHUB_OUTPUT
