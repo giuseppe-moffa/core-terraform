@@ -1,6 +1,6 @@
 variable "name" {
   type        = string
-  description = "Logical name for the bucket (used if bucket_name not provided)"
+  description = "Logical name; bucket name is derived as project-environment-name (e.g. core-dev-<name>)"
 }
 
 variable "project" {
@@ -21,7 +21,7 @@ variable "request_id" {
 
 variable "bucket_name" {
   type        = string
-  description = "Override for bucket name; set null to derive"
+  description = "Deprecated: ignored; bucket name is always project-environment-name. Kept for backward compatibility."
   default     = null
 }
 
