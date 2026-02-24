@@ -80,3 +80,30 @@ module "tfpilot_req_dev_s3_9s3b3z" {
   }
 }
 # --- tfpilot:end:req_dev_s3_9s3b3z ---
+# --- tfpilot:begin:req_dev_s3_yq8ncc ---
+module "tfpilot_req_dev_s3_yq8ncc" {
+  source = "../../modules/s3-bucket"
+  name = "core-private-yq8ncc"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_s3_yq8ncc"
+  versioning_enabled = true
+  force_destroy = false
+  block_public_access = true
+  enable_lifecycle = false
+  noncurrent_expiration_days = 30
+  abort_multipart_days = 7
+  encryption_mode = "sse-s3"
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_s3_yq8ncc"
+    Project = "core"
+    Environment = "dev"
+    "tfpilot:request_id" = "req_dev_s3_yq8ncc"
+    "tfpilot:project" = "core"
+    "tfpilot:environment" = "dev"
+    "tfpilot:created_by" = "giuseppe-moffa"
+    "tfpilot:template_id" = "s3-private-secure"
+  }
+}
+# --- tfpilot:end:req_dev_s3_yq8ncc ---
