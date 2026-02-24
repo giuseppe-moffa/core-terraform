@@ -1,9 +1,9 @@
+# name from TfPilot is already unique (base + short request suffix); do not append request_id to avoid double suffix
 locals {
   base_name = lower(join("-", compact([
     var.project,
     var.environment,
     var.name,
-    var.request_id != "" ? var.request_id : null,
   ])))
 
   instance_name = substr(replace(local.base_name, "/[^a-z0-9-]/", ""), 0, 255)

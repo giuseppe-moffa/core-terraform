@@ -1,3 +1,4 @@
+# name from TfPilot is already unique (base + short request suffix); do not append request_id to avoid double suffix
 locals {
   base_bucket_name = lower(join("-", compact([
     var.project,

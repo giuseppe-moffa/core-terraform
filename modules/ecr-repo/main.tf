@@ -1,9 +1,9 @@
+# name from TfPilot is already unique (base + short request suffix); do not append request_id to avoid double suffix
 locals {
   base_repo_name = lower(join("-", compact([
     var.project,
     var.environment,
     var.name,
-    var.request_id != "" ? var.request_id : "",
   ])))
 
   # ECR repo name: [a-z0-9][a-z0-9._-]*
