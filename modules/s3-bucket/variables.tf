@@ -19,12 +19,6 @@ variable "request_id" {
   default     = ""
 }
 
-variable "bucket_name" {
-  type        = string
-  description = "Deprecated: ignored; bucket name is always project-environment-name. Kept for backward compatibility."
-  default     = null
-}
-
 variable "versioning_enabled" {
   type        = bool
   description = "Enable S3 versioning"
