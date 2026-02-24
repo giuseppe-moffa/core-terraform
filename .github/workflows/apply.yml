@@ -69,7 +69,14 @@ jobs:
       - name: Terraform Apply
         run: |
           set -euxo pipefail
-          terraform apply -input=false -auto-approve -lock-timeout=300s | tee apply.txt
+          # Scope apply to this request's module (same as plan and destroy)
+          REQUEST_ID="${{ inputs.request_id }}"
+          TARGET_ARG=""
+          if [ -n "$REQUEST_ID" ]; then
+            MODULE_NAME="tfpilot_$(echo "$REQUEST_ID" | sed 's/[^a-zA-Z0-9_]/_/g')"
+            TARGET_ARG="-target=module.${MODULE_NAME}"
+          fi
+          terraform apply -input=false -auto-approve -lock-timeout=300s $TARGET_ARG | tee apply.txt
 
       - name: Upload apply logs
         if: always()

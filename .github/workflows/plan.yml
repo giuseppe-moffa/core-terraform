@@ -68,7 +68,14 @@ jobs:
       - name: Terraform Plan
         run: |
           set -euxo pipefail
-          terraform plan -input=false -no-color -lock-timeout=300s -out=tfplan.binary | tee plan.txt
+          # Scope plan to this request's module so only this request's resources appear (not other merged requests on the branch)
+          REQUEST_ID="${{ inputs.request_id }}"
+          TARGET_ARG=""
+          if [ -n "$REQUEST_ID" ]; then
+            MODULE_NAME="tfpilot_$(echo "$REQUEST_ID" | sed 's/[^a-zA-Z0-9_]/_/g')"
+            TARGET_ARG="-target=module.${MODULE_NAME}"
+          fi
+          terraform plan -input=false -no-color -lock-timeout=300s $TARGET_ARG -out=tfplan.binary | tee plan.txt
           terraform show -json tfplan.binary > plan.json
 
       - name: Upload plan logs
