@@ -24,3 +24,28 @@ module "tfpilot_req_dev_ec2_xtklvu" {
   }
 }
 # --- tfpilot:end:req_dev_ec2_xtklvu ---
+# --- tfpilot:begin:req_dev_ec2_k57sjg ---
+module "tfpilot_req_dev_ec2_k57sjg" {
+  source = "../../modules/ec2-instance"
+  name = "ai-agent-k57sjg"
+  project = "core"
+  environment = "dev"
+  request_id = "req_dev_ec2_k57sjg"
+  instance_type = "t3.micro"
+  network_preset = "shared-public"
+  associate_public_ip_address = true
+  root_volume_size_gb = 20
+  monitoring = true
+  tags = {
+    ManagedBy = "tfpilot"
+    TfPilotRequestId = "req_dev_ec2_k57sjg"
+    Project = "core"
+    Environment = "dev"
+    "tfpilot:request_id" = "req_dev_ec2_k57sjg"
+    "tfpilot:project" = "core"
+    "tfpilot:environment" = "dev"
+    "tfpilot:created_by" = "giuseppe-moffa"
+    "tfpilot:template_id" = "dev-frontend"
+  }
+}
+# --- tfpilot:end:req_dev_ec2_k57sjg ---
