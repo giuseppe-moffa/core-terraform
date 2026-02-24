@@ -1,6 +1,6 @@
 variable "name" {
   type        = string
-  description = "Logical name for the repository (used if repo_name not provided)"
+  description = "Full repository name (e.g. project-environment-userName-shortId from TfPilot); sanitized for ECR"
 }
 
 variable "project" {
@@ -17,12 +17,6 @@ variable "request_id" {
   type        = string
   description = "Request correlation id"
   default     = ""
-}
-
-variable "repo_name" {
-  type        = string
-  description = "Override ECR repository name; if null/empty, derived from project-environment-name"
-  default     = null
 }
 
 variable "scan_on_push" {

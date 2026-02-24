@@ -1,6 +1,6 @@
 variable "name" {
   type        = string
-  description = "Logical name; bucket name is derived as project-environment-name (e.g. core-dev-<name>)"
+  description = "Full bucket name (e.g. project-environment-userName-shortId from TfPilot); only sanitized for S3 length/chars"
 }
 
 variable "project" {

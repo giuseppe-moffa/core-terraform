@@ -1,6 +1,6 @@
 variable "name" {
   type        = string
-  description = "Logical name for the EC2 instance"
+  description = "Full instance name (e.g. project-environment-userName-shortId from TfPilot); used for Name tag and sanitized"
 }
 
 variable "project" {

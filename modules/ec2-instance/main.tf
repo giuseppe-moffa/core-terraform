@@ -1,12 +1,6 @@
-# name from TfPilot is already unique (base + short request suffix); do not append request_id to avoid double suffix
+# name from TfPilot is the full resource name (project-env-userName-shortId); use as-is, only sanitize
 locals {
-  base_name = lower(join("-", compact([
-    var.project,
-    var.environment,
-    var.name,
-  ])))
-
-  instance_name = substr(replace(local.base_name, "/[^a-z0-9-]/", ""), 0, 255)
+  instance_name = substr(replace(lower(var.name), "/[^a-z0-9-]/", "-"), 0, 255)
 
   required_tags = {
     ManagedBy        = "tfpilot"

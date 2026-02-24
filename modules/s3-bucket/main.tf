@@ -1,14 +1,5 @@
-# Same as EC2/ECR: resource name = project + environment + name (name from TfPilot already has short request suffix)
+# name from TfPilot is the full resource name (project-env-userName-shortId); use as-is, only sanitize for S3
 locals {
-  base_bucket_name = lower(join("-", compact([
-    var.project,
-    var.environment,
-    var.name,
-  ])))
-
-  # Always use computed name so S3 matches other modules (project-env-name); var.bucket_name is not used
-  bucket_name = substr(replace(local.base_bucket_name, "/[^a-z0-9-]/", ""), 0, 63)
-
   required_tags = {
     ManagedBy        = "tfpilot"
     TfPilotRequestId = var.request_id
@@ -26,7 +17,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket        = local.bucket_name
+  bucket        = substr(replace(lower(var.name), "/[^a-z0-9-]/", "-"), 0, 63)
   force_destroy = var.force_destroy
 
   tags = local.merged_tags

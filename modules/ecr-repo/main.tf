@@ -1,14 +1,7 @@
-# name from TfPilot is already unique (base + short request suffix); do not append request_id to avoid double suffix
+# name from TfPilot is the full resource name (project-env-userName-shortId); use as-is, only sanitize for ECR
 locals {
-  base_repo_name = lower(join("-", compact([
-    var.project,
-    var.environment,
-    var.name,
-  ])))
-
   # ECR repo name: [a-z0-9][a-z0-9._-]*
-  repo_name_override = (var.repo_name != null && trimspace(var.repo_name) != "") ? trimspace(var.repo_name) : null
-  repo_name          = local.repo_name_override != null ? local.repo_name_override : substr(replace(local.base_repo_name, "/[^a-z0-9._-]/", "-"), 0, 256)
+  name = substr(replace(lower(var.name), "/[^a-z0-9._-]/", "-"), 0, 256)
 
   required_tags = {
     ManagedBy        = "tfpilot"
@@ -38,7 +31,7 @@ locals {
 }
 
 resource "aws_ecr_repository" "this" {
-  name                 = local.repo_name
+  name                 = local.name
   image_tag_mutability = var.image_tag_mutability
   force_delete         = var.force_delete
 
