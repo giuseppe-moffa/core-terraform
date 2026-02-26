@@ -60,7 +60,7 @@ jobs:
           set -euxo pipefail
           terraform init -input=false \
             -backend-config="bucket=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}" \
-            -backend-config="key=tfpilot-tfstate-core-${{ env.ENVIRONMENT }}/envs/${{ env.ENVIRONMENT }}/terraform.tfstate" \
+            -backend-config="key=terraform.tfstate" \
             -backend-config="region=eu-west-2" \
             -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ env.ENVIRONMENT }}" \
             -backend-config="encrypt=true"
