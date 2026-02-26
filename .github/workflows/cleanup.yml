@@ -39,7 +39,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: core-terraform-${{ inputs.environment || 'dev' }}-${{ inputs.request_id }}
+  group: core-terraform-${{ inputs.environment }}-${{ inputs.request_id }}
   cancel-in-progress: false
 
 jobs:

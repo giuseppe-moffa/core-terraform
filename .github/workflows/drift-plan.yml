@@ -16,7 +16,7 @@ on:
           - prod
 
 concurrency:
-  group: core-terraform-${{ inputs.environment || 'dev' }}-${{ inputs.request_id || 'global' }}
+  group: core-terraform-${{ inputs.environment }}-${{ inputs.request_id }}
   cancel-in-progress: true
 
 permissions:
@@ -27,7 +27,7 @@ jobs:
   drift-plan:
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      ENVIRONMENT: ${{ inputs.environment }}
       REQUEST_ID: ${{ inputs.request_id }}
       TFPILOT_API_URL: ${{ secrets.TFPILOT_API_URL || 'https://tfpilot.com' }}
     defaults:
@@ -40,7 +40,7 @@ jobs:
           ref: main
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
           aws-region: eu-west-2
@@ -121,5 +121,5 @@ jobs:
         with:
           name: drift-plan-logs
           path: |
-            plan.txt
+            envs/${{ inputs.environment }}/plan.txt
             envs/${{ inputs.environment }}/.terraform.lock.hcl

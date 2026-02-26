@@ -24,7 +24,7 @@ on:
         default: "false"
 
 concurrency:
-  group: core-terraform-${{ inputs.environment || 'dev' }}-${{ inputs.request_id }}
+  group: core-terraform-${{ inputs.environment }}-${{ inputs.request_id }}
   cancel-in-progress: false
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment == 'prod' && 'production' || 'nonprod' }}
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      ENVIRONMENT: ${{ inputs.environment }}
       DRY_RUN: ${{ inputs.dry_run || 'false' }}
     defaults:
       run:
@@ -48,7 +48,7 @@ jobs:
           ref: ${{ inputs.ref || 'main' }}
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
           aws-region: eu-west-2
@@ -82,7 +82,9 @@ jobs:
             echo "Dry run enabled; skipping destroy"
             exit 0
           fi
-          terraform destroy -input=false -auto-approve -lock-timeout=300s -target="module.tfpilot_${{ inputs.request_id }}"
+          REQUEST_ID="${{ inputs.request_id }}"
+          MODULE_NAME="tfpilot_$(echo "$REQUEST_ID" | sed 's/[^a-zA-Z0-9_]/_/g')"
+          terraform destroy -input=false -auto-approve -lock-timeout=300s -target="module.${MODULE_NAME}" | tee destroy.txt
 
       - name: Upload destroy logs
         if: always()
@@ -90,4 +92,5 @@ jobs:
         with:
           name: destroy-logs
           path: |
-            envs/${{ inputs.environment }}/.terraform.lock.hcl
+            envs/${{ env.ENVIRONMENT }}/destroy.txt
+            envs/${{ env.ENVIRONMENT }}/.terraform.lock.hcl

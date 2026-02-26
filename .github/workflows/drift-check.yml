@@ -57,6 +57,7 @@ jobs:
               continue
             fi
             
+            sleep 2
             echo "Dispatching drift-plan for request: $REQUEST_ID"
             
             # Get request details to determine environment

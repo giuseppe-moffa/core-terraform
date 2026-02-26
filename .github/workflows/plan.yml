@@ -16,7 +16,7 @@ on:
           - prod
 
 concurrency:
-  group: core-terraform-${{ inputs.environment || 'dev' }}-${{ inputs.request_id || 'global' }}
+  group: core-terraform-${{ inputs.environment }}-${{ inputs.request_id }}
   cancel-in-progress: true
 
 permissions:
@@ -27,7 +27,7 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      ENVIRONMENT: ${{ inputs.environment }}
     defaults:
       run:
         working-directory: envs/${{ env.ENVIRONMENT }}
@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
           aws-region: eu-west-2
@@ -98,7 +98,7 @@ jobs:
       contents: read
       pull-requests: write
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      ENVIRONMENT: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -178,7 +178,7 @@ jobs:
 
       - name: Configure AWS credentials (for S3 upload)
         if: steps.tf-changes.outputs.has_tf_changes == 'true' && inputs.request_id != ''
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
           aws-region: eu-west-2
