@@ -15,10 +15,6 @@ on:
           - dev
           - prod
 
-concurrency:
-  group: core-terraform-${{ inputs.environment }}-${{ inputs.request_id }}
-  cancel-in-progress: true
-
 permissions:
   id-token: write
   contents: read
@@ -64,7 +60,7 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          terraform plan -input=false -no-color -lock-timeout=300s -detailed-exitcode | tee plan.txt
+          terraform plan -input=false -no-color -lock=false -detailed-exitcode | tee plan.txt
           PLAN_EXIT=$?
           echo "plan_exit_code=$PLAN_EXIT" >> $GITHUB_OUTPUT
           set -e

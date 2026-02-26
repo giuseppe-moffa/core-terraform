@@ -16,7 +16,7 @@ on:
           - prod
 
 concurrency:
-  group: core-terraform-${{ inputs.environment }}-${{ inputs.request_id || github.run_id }}
+  group: core-terraform-state-${{ inputs.environment }}
   cancel-in-progress: false
 
 permissions:
