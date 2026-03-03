@@ -1,0 +1,121 @@
+# Model 2: envs/<environment_key>/<environment_slug>. Not dispatched by app until cutover.
+name: Terraform Destroy (v2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "Request ID (required for destroy_scope=module)"
+        required: false
+        type: string
+      environment_key:
+        description: "Environment key (dev or prod)"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      environment_slug:
+        description: "Environment slug (e.g. ai-agent)"
+        required: true
+        type: string
+      destroy_scope:
+        description: "module = target single module; environment = full destroy"
+        required: true
+        type: choice
+        options:
+          - module
+          - environment
+      ref:
+        description: "Git ref (commit/branch) to checkout (defaults to base)"
+        required: false
+        default: ""
+      dry_run:
+        description: "If true, skip terraform destroy (for testing)"
+        required: false
+        default: "false"
+      environment_id:
+        description: "Environment ID (for webhook correlation; optional, not used by workflow)"
+        required: false
+        type: string
+
+concurrency:
+  group: core-terraform-state-${{ inputs.environment_key }}-${{ inputs.environment_slug }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_key == 'prod' && 'production' || 'nonprod' }}
+    env:
+      ENV_ROOT: envs/${{ inputs.environment_key }}/${{ inputs.environment_slug }}
+      DRY_RUN: ${{ inputs.dry_run || 'false' }}
+    defaults:
+      run:
+        working-directory: ${{ env.ENV_ROOT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'main' }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
+          aws-region: eu-west-2
+          role-session-name: tfplan-destroy-v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Debug context
+        run: |
+          set -euxo pipefail
+          aws sts get-caller-identity
+          terraform version
+          pwd
+          ls -la
+
+      - name: Terraform Init
+        run: |
+          set -euxo pipefail
+          terraform init -input=false \
+            -backend-config="bucket=tfpilot-tfstate-core-${{ inputs.environment_key }}" \
+            -backend-config="key=${{ inputs.environment_slug }}/terraform.tfstate" \
+            -backend-config="region=eu-west-2" \
+            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ inputs.environment_key }}" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Destroy
+        run: |
+          set -euxo pipefail
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run enabled; skipping destroy"
+            exit 0
+          fi
+          DESTROY_SCOPE="${{ inputs.destroy_scope }}"
+          if [ "$DESTROY_SCOPE" = "environment" ]; then
+            terraform destroy -input=false -auto-approve -lock-timeout=300s | tee destroy.txt
+          else
+            REQUEST_ID="${{ inputs.request_id }}"
+            if [ -z "$REQUEST_ID" ]; then
+              echo "::error::request_id required when destroy_scope=module"
+              exit 1
+            fi
+            MODULE_NAME="tfpilot_$(echo "$REQUEST_ID" | sed 's/[^a-zA-Z0-9_]/_/g')"
+            terraform destroy -input=false -auto-approve -lock-timeout=300s -target="module.${MODULE_NAME}" | tee destroy.txt
+          fi
+
+      - name: Upload destroy logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: destroy-logs-v2
+          path: |
+            ${{ env.ENV_ROOT }}/destroy.txt
+            ${{ env.ENV_ROOT }}/.terraform.lock.hcl

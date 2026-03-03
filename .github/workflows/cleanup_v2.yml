@@ -1,0 +1,126 @@
+# Model 2: direct file deletion. envs/<key>/<slug>/tfpilot/requests/req_<id>.tf
+name: Terraform Cleanup (v2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "TfPilot request ID"
+        required: true
+        type: string
+      environment_key:
+        description: "Environment key (dev or prod)"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      environment_slug:
+        description: "Environment slug (e.g. ai-agent)"
+        required: true
+        type: string
+      target_base:
+        description: "Base branch"
+        required: false
+        default: "main"
+        type: string
+      auto_merge:
+        description: "Auto-merge when not prod"
+        required: false
+        default: "false"
+        type: string
+      ref:
+        description: "Git ref (commit/branch) to checkout"
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: "If true, skip pushing/PR creation"
+        required: false
+        default: "false"
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: core-terraform-${{ inputs.environment_key }}-${{ inputs.environment_slug }}-${{ inputs.request_id }}-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_key == 'prod' && 'production' || 'nonprod' }}
+    env:
+      DRY_RUN: ${{ inputs.dry_run || 'false' }}
+      REQUEST_FILE: envs/${{ inputs.environment_key }}/${{ inputs.environment_slug }}/tfpilot/requests/req_${{ inputs.request_id }}.tf
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || inputs.target_base }}
+
+      - name: Configure git
+        run: |
+          git config user.name "tfpilot-bot"
+          git config user.email "tfpilot-bot@users.noreply.github.com"
+
+      - name: Delete request file
+        run: |
+          if [ ! -f "$REQUEST_FILE" ]; then
+            echo "File $REQUEST_FILE not found; nothing to delete"
+            exit 0
+          fi
+          rm -f "$REQUEST_FILE"
+          echo "Deleted $REQUEST_FILE"
+
+      - name: Create branch and commit
+        id: commit
+        run: |
+          BR="cleanup/${{ inputs.request_id }}"
+          git fetch origin "$BR" || true
+          if git ls-remote --exit-code origin "$BR" >/dev/null 2>&1; then
+            git checkout -B "$BR" "origin/$BR"
+          else
+            git checkout -B "$BR" "${{ inputs.target_base }}"
+          fi
+          git status --short
+          if git status --short | grep . >/dev/null 2>&1; then
+            git add -A
+          else
+            echo "no_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          git commit -m "Cleanup request ${{ inputs.request_id }}"
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "Dry run: skipping push/PR"
+            exit 0
+          fi
+          git push origin "$BR"
+          echo "branch=$BR" >> $GITHUB_OUTPUT
+
+      - name: Create PR
+        id: pr
+        if: steps.commit.outputs.no_changes != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BR="${{ steps.commit.outputs.branch }}"
+          pr_info=$(gh pr create \
+            --base "${{ inputs.target_base }}" \
+            --head "$BR" \
+            --title "Cleanup request ${{ inputs.request_id }}" \
+            --body "Automated cleanup for request ${{ inputs.request_id }} (${{ inputs.environment_key }}/${{ inputs.environment_slug }}).")
+          pr_url=$(gh pr view "$BR" --json url --jq .url)
+          pr_number=$(gh pr view "$BR" --json number --jq .number)
+          echo "url=$pr_url" >> $GITHUB_OUTPUT
+          echo "number=$pr_number" >> $GITHUB_OUTPUT
+          echo "$pr_info"
+
+      - name: Enable auto-merge (non-prod)
+        if: inputs.auto_merge == 'true' && steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge "${{ steps.pr.outputs.number }}" --merge --auto

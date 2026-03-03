@@ -1,0 +1,92 @@
+# Model 2: envs/<environment_key>/<environment_slug>. Not dispatched by app until cutover.
+name: Terraform Apply (v2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "Request ID (optional)"
+        required: false
+        type: string
+      environment_key:
+        description: "Environment key (dev or prod)"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      environment_slug:
+        description: "Environment slug (e.g. ai-agent)"
+        required: true
+        type: string
+
+concurrency:
+  group: core-terraform-state-${{ inputs.environment_key }}-${{ inputs.environment_slug }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_key == 'prod' && 'production' || 'nonprod' }}
+    env:
+      ENV_ROOT: envs/${{ inputs.environment_key }}/${{ inputs.environment_slug }}
+    defaults:
+      run:
+        working-directory: ${{ env.ENV_ROOT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::420259807324:role/tfplan-connector
+          aws-region: eu-west-2
+          role-session-name: tfplan-apply-v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Debug AWS identity and context
+        run: |
+          set -euxo pipefail
+          aws sts get-caller-identity
+          aws configure get region || true
+          echo "TF_WORKING_DIR=$(pwd)"
+          terraform version
+          pwd
+          ls -la
+
+      - name: Terraform Init
+        run: |
+          set -euxo pipefail
+          terraform init -input=false \
+            -backend-config="bucket=tfpilot-tfstate-core-${{ inputs.environment_key }}" \
+            -backend-config="key=${{ inputs.environment_slug }}/terraform.tfstate" \
+            -backend-config="region=eu-west-2" \
+            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ inputs.environment_key }}" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Apply
+        run: |
+          set -euxo pipefail
+          REQUEST_ID="${{ inputs.request_id }}"
+          TARGET_ARG=""
+          if [ -n "$REQUEST_ID" ]; then
+            MODULE_NAME="tfpilot_$(echo "$REQUEST_ID" | sed 's/[^a-zA-Z0-9_]/_/g')"
+            TARGET_ARG="-target=module.${MODULE_NAME}"
+          fi
+          terraform apply -input=false -auto-approve -lock-timeout=300s $TARGET_ARG | tee apply.txt
+
+      - name: Upload apply logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apply-logs-v2
+          path: |
+            ${{ env.ENV_ROOT }}/apply.txt
+            ${{ env.ENV_ROOT }}/.terraform.lock.hcl
