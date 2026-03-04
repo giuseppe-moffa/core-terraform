@@ -205,6 +205,22 @@ jobs:
         with:
           name: plan-logs-v2
 
+      - name: Ensure plan.json at ENV_ROOT
+        if: steps.tf-changes.outputs.has_tf_changes == 'true'
+        run: |
+          PLAN_JSON="${{ env.ENV_ROOT }}/plan.json"
+          if [ -f "$PLAN_JSON" ]; then
+            echo "plan.json already at $PLAN_JSON"
+          elif [ -f plan.json ]; then
+            mkdir -p "${{ env.ENV_ROOT }}"
+            cp plan.json "$PLAN_JSON"
+            echo "Copied plan.json from ./ to $PLAN_JSON"
+          else
+            echo "::error::plan.json not found"
+            find . -name "plan.json" 2>/dev/null || true
+            exit 1
+          fi
+
       - name: Generate Infracost cost JSON
         if: steps.tf-changes.outputs.has_tf_changes == 'true'
         run: |
