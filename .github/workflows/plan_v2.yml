@@ -140,8 +140,10 @@ jobs:
             MODULE_NAME="tfpilot_$(echo "$REQUEST_ID" | sed 's/[^a-zA-Z0-9_]/_/g')"
             TARGET_ARG="-target=module.${MODULE_NAME}"
           fi
-          terraform plan -input=false -no-color -lock=false $TARGET_ARG -out=tfplan.binary | tee plan.txt
-          terraform show -json tfplan.binary > plan.json
+          PLAN_TXT="${GITHUB_WORKSPACE}/${{ env.ENV_ROOT }}/plan.txt"
+          PLAN_JSON="${GITHUB_WORKSPACE}/${{ env.ENV_ROOT }}/plan.json"
+          terraform plan -input=false -no-color -lock=false $TARGET_ARG -out=tfplan.binary | tee "$PLAN_TXT"
+          terraform show -json tfplan.binary > "$PLAN_JSON"
 
       - name: Upload plan logs
         if: always()
