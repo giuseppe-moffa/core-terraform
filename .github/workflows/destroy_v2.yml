@@ -1,4 +1,4 @@
-# Model 2: envs/<environment_key>/<environment_slug>. Not dispatched by app until cutover.
+# Model 2: envs/<environment_key>/<environment_slug>. Supports deploy/<key>/<slug> branches; destroy_scope=environment for full env.
 name: Terraform Destroy (v2)
 
 on:

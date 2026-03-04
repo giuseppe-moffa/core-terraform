@@ -1,4 +1,4 @@
-# Model 2: direct file deletion. envs/<key>/<slug>/tfpilot/requests/req_<id>.tf
+# Model 2: direct file deletion (no marker blocks). envs/<key>/<slug>/tfpilot/requests/<module>_req_<id>.tf
 name: Terraform Cleanup (v2)
 
 on:
@@ -6,6 +6,10 @@ on:
     inputs:
       request_id:
         description: "TfPilot request ID"
+        required: true
+        type: string
+      module:
+        description: "Module name (slug-safe, e.g. ecr-repo)"
         required: true
         type: string
       environment_key:
@@ -54,7 +58,7 @@ jobs:
     environment: ${{ inputs.environment_key == 'prod' && 'production' || 'nonprod' }}
     env:
       DRY_RUN: ${{ inputs.dry_run || 'false' }}
-      REQUEST_FILE: envs/${{ inputs.environment_key }}/${{ inputs.environment_slug }}/tfpilot/requests/req_${{ inputs.request_id }}.tf
+      REQUEST_FILE: envs/${{ inputs.environment_key }}/${{ inputs.environment_slug }}/tfpilot/requests/${{ inputs.module }}_req_${{ inputs.request_id }}.tf
     steps:
       - name: Checkout
         uses: actions/checkout@v4
