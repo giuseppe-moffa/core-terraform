@@ -1,23 +1,23 @@
-# Model 2: envs/<environment_key>/<environment_slug>. Supports deploy/<key>/<slug> branches (ENV_ROOT).
+# Model 2: envs/<workspace_key>/<workspace_slug>. Supports deploy/<key>/<slug> branches (ENV_ROOT).
 name: Drift Plan (v2)
 
 on:
   workflow_dispatch:
     inputs:
-      environment_key:
-        description: "Environment key (dev or prod)"
+      workspace_key:
+        description: "Workspace key (dev or prod)"
         required: true
         type: choice
         options:
           - dev
           - prod
-      environment_slug:
-        description: "Environment slug (e.g. ai-agent)"
+      workspace_slug:
+        description: "Workspace slug (e.g. ai-agent)"
         required: true
         type: string
 
 concurrency:
-  group: core-terraform-state-${{ inputs.environment_key }}-${{ inputs.environment_slug }}
+  group: core-terraform-state-${{ inputs.workspace_key }}-${{ inputs.workspace_slug }}
   cancel-in-progress: false
 
 permissions:
@@ -27,9 +27,9 @@ permissions:
 jobs:
   drift-plan:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment_key == 'prod' && 'production' || 'nonprod' }}
+    environment: ${{ inputs.workspace_key == 'prod' && 'production' || 'nonprod' }}
     env:
-      ENV_ROOT: envs/${{ inputs.environment_key }}/${{ inputs.environment_slug }}
+      ENV_ROOT: envs/${{ inputs.workspace_key }}/${{ inputs.workspace_slug }}
     defaults:
       run:
         working-directory: ${{ env.ENV_ROOT }}
@@ -53,10 +53,10 @@ jobs:
         run: |
           set -euxo pipefail
           terraform init -input=false \
-            -backend-config="bucket=tfpilot-tfstate-core-${{ inputs.environment_key }}" \
-            -backend-config="key=${{ inputs.environment_slug }}/terraform.tfstate" \
+            -backend-config="bucket=tfpilot-tfstate-core-${{ inputs.workspace_key }}" \
+            -backend-config="key=${{ inputs.workspace_slug }}/terraform.tfstate" \
             -backend-config="region=eu-west-2" \
-            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ inputs.environment_key }}" \
+            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ inputs.workspace_key }}" \
             -backend-config="encrypt=true"
 
       - name: Terraform Plan (Drift Detection)

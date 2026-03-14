@@ -12,15 +12,15 @@ on:
         description: "Module name (slug-safe, e.g. ecr-repo)"
         required: true
         type: string
-      environment_key:
+      workspace_key:
         description: "Environment key (dev or prod)"
         required: true
         type: choice
         options:
           - dev
           - prod
-      environment_slug:
-        description: "Environment slug (e.g. ai-agent)"
+      workspace_slug:
+        description: "Workspace slug (e.g. ai-agent)"
         required: true
         type: string
       target_base:
@@ -49,16 +49,16 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: core-terraform-${{ inputs.environment_key }}-${{ inputs.environment_slug }}-${{ inputs.request_id }}-cleanup
+  group: core-terraform-${{ inputs.workspace_key }}-${{ inputs.workspace_slug }}-${{ inputs.request_id }}-cleanup
   cancel-in-progress: false
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment_key == 'prod' && 'production' || 'nonprod' }}
+    environment: ${{ inputs.workspace_key == 'prod' && 'production' || 'nonprod' }}
     env:
       DRY_RUN: ${{ inputs.dry_run || 'false' }}
-      REQUEST_FILE: envs/${{ inputs.environment_key }}/${{ inputs.environment_slug }}/tfpilot/requests/${{ inputs.module }}_req_${{ inputs.request_id }}.tf
+      REQUEST_FILE: envs/${{ inputs.workspace_key }}/${{ inputs.workspace_slug }}/tfpilot/requests/${{ inputs.module }}_req_${{ inputs.request_id }}.tf
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -115,7 +115,7 @@ jobs:
             --base "${{ inputs.target_base }}" \
             --head "$BR" \
             --title "Cleanup request ${{ inputs.request_id }}" \
-            --body "Automated cleanup for request ${{ inputs.request_id }} (${{ inputs.environment_key }}/${{ inputs.environment_slug }}).")
+            --body "Automated cleanup for request ${{ inputs.request_id }} (${{ inputs.workspace_key }}/${{ inputs.workspace_slug }}).")
           pr_url=$(gh pr view "$BR" --json url --jq .url)
           pr_number=$(gh pr view "$BR" --json number --jq .number)
           echo "url=$pr_url" >> $GITHUB_OUTPUT

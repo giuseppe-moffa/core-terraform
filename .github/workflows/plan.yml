@@ -1,21 +1,21 @@
-# Model 2: envs/<environment_key>/<environment_slug>. Supports deploy/<key>/<slug> and request/<id> branches.
+# Model 2: envs/<workspace_key>/<workspace_slug>. Supports deploy/<key>/<slug> and request/<id> branches.
 name: Terraform Plan (v2)
 
 on:
   workflow_dispatch:
     inputs:
       request_id:
-        description: "TfPilot request ID (optional; empty = full env plan for deploy branches)"
+        description: "TfPilot request ID (optional; empty = full workspace plan for deploy branches)"
         required: false
         type: string
-      environment_key:
+      workspace_key:
         description: "Environment key (dev or prod)"
         required: true
         type: choice
         options:
           - dev
           - prod
-      environment_slug:
+      workspace_slug:
         description: "Environment slug (e.g. ai-agent)"
         required: true
         type: string
@@ -23,7 +23,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: ${{ github.event_name == 'workflow_dispatch' && format('core-terraform-{0}-{1}-{2}', inputs.environment_key, inputs.environment_slug, inputs.request_id || 'deploy') || format('core-terraform-pr-{0}', github.head_ref) }}
+  group: ${{ github.event_name == 'workflow_dispatch' && format('core-terraform-{0}-{1}-{2}', inputs.workspace_key, inputs.workspace_slug, inputs.request_id || 'deploy') || format('core-terraform-pr-{0}', github.head_ref) }}
   cancel-in-progress: false
 
 permissions:
@@ -34,30 +34,30 @@ jobs:
   resolve-env:
     runs-on: ubuntu-latest
     outputs:
-      environment_key: ${{ steps.out.outputs.environment_key }}
-      environment_slug: ${{ steps.out.outputs.environment_slug }}
+      workspace_key: ${{ steps.out.outputs.workspace_key }}
+      workspace_slug: ${{ steps.out.outputs.workspace_slug }}
       request_id: ${{ steps.out.outputs.request_id }}
       skip: ${{ steps.out.outputs.skip }}
     steps:
-      - name: Checkout (for PR env resolution)
+      - name: Checkout (for PR workspace resolution)
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
         with:
           fetch-depth: 500
 
-      - name: Resolve environment
+      - name: Resolve workspace
         id: out
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "environment_key=${{ inputs.environment_key }}" >> $GITHUB_OUTPUT
-            echo "environment_slug=${{ inputs.environment_slug }}" >> $GITHUB_OUTPUT
+            echo "workspace_key=${{ inputs.workspace_key }}" >> $GITHUB_OUTPUT
+            echo "workspace_slug=${{ inputs.workspace_slug }}" >> $GITHUB_OUTPUT
             echo "request_id=${{ inputs.request_id || '' }}" >> $GITHUB_OUTPUT
             echo "skip=false" >> $GITHUB_OUTPUT
           else
             REF="${{ github.head_ref }}"
             if [[ "$REF" =~ ^deploy/([^/]+)/(.+)$ ]]; then
-              echo "environment_key=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-              echo "environment_slug=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+              echo "workspace_key=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+              echo "workspace_slug=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
               echo "request_id=" >> $GITHUB_OUTPUT
               echo "skip=false" >> $GITHUB_OUTPUT
             elif [[ "$REF" =~ ^request/(.+)$ ]]; then
@@ -71,18 +71,18 @@ jobs:
                 exit 1
               fi
               if [ -z "$ENV_ROOTS" ]; then
-                echo "::error::Could not determine env from PR changed files (expect envs/<key>/<slug>/ in path)"
+                echo "::error::Could not determine workspace from PR changed files (expect envs/<key>/<slug>/ in path)"
                 exit 1
               fi
               ENV_LINE=$(echo "$ENV_ROOTS" | head -1)
               KEY=$(echo "$ENV_LINE" | cut -d/ -f2)
               SLUG=$(echo "$ENV_LINE" | cut -d/ -f3)
-              echo "environment_key=$KEY" >> $GITHUB_OUTPUT
-              echo "environment_slug=$SLUG" >> $GITHUB_OUTPUT
+              echo "workspace_key=$KEY" >> $GITHUB_OUTPUT
+              echo "workspace_slug=$SLUG" >> $GITHUB_OUTPUT
               echo "skip=false" >> $GITHUB_OUTPUT
             else
-              echo "environment_key=" >> $GITHUB_OUTPUT
-              echo "environment_slug=" >> $GITHUB_OUTPUT
+              echo "workspace_key=" >> $GITHUB_OUTPUT
+              echo "workspace_slug=" >> $GITHUB_OUTPUT
               echo "request_id=" >> $GITHUB_OUTPUT
               echo "skip=true" >> $GITHUB_OUTPUT
             fi
@@ -93,7 +93,7 @@ jobs:
     if: needs.resolve-env.outputs.skip != 'true'
     runs-on: ubuntu-latest
     env:
-      ENV_ROOT: envs/${{ needs.resolve-env.outputs.environment_key }}/${{ needs.resolve-env.outputs.environment_slug }}
+      ENV_ROOT: envs/${{ needs.resolve-env.outputs.workspace_key }}/${{ needs.resolve-env.outputs.workspace_slug }}
     defaults:
       run:
         working-directory: ${{ env.ENV_ROOT }}
@@ -125,10 +125,10 @@ jobs:
         run: |
           set -euxo pipefail
           terraform init -input=false \
-            -backend-config="bucket=tfpilot-tfstate-core-${{ needs.resolve-env.outputs.environment_key }}" \
-            -backend-config="key=${{ needs.resolve-env.outputs.environment_slug }}/terraform.tfstate" \
+            -backend-config="bucket=tfpilot-tfstate-core-${{ needs.resolve-env.outputs.workspace_key }}" \
+            -backend-config="key=${{ needs.resolve-env.outputs.workspace_slug }}/terraform.tfstate" \
             -backend-config="region=eu-west-2" \
-            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ needs.resolve-env.outputs.environment_key }}" \
+            -backend-config="dynamodb_table=tfpilot-tfstate-lock-core-${{ needs.resolve-env.outputs.workspace_key }}" \
             -backend-config="encrypt=true"
 
       - name: Terraform Plan
@@ -165,7 +165,7 @@ jobs:
       contents: read
       pull-requests: write
     env:
-      ENV_ROOT: envs/${{ needs.resolve-env.outputs.environment_key }}/${{ needs.resolve-env.outputs.environment_slug }}
+      ENV_ROOT: envs/${{ needs.resolve-env.outputs.workspace_key }}/${{ needs.resolve-env.outputs.workspace_slug }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

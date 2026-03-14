@@ -60,21 +60,26 @@ jobs:
             sleep 2
             echo "Dispatching drift-plan for request: $REQUEST_ID"
             
-            # Get request details to determine environment
+            # Get request details for workspace_key and workspace_slug
             REQUEST_DETAILS=$(curl -s "${TFPILOT_API_URL}/api/requests/${REQUEST_ID}" || echo '{}')
-            ENV=$(echo "$REQUEST_DETAILS" | jq -r '.request.environment // "dev"' || echo "dev")
+            WS_KEY=$(echo "$REQUEST_DETAILS" | jq -r '.workspace_key // .request.workspace_key // "dev"' || echo "dev")
+            WS_SLUG=$(echo "$REQUEST_DETAILS" | jq -r '.workspace_slug // .request.workspace_slug // ""' || echo "")
+            if [ -z "$WS_SLUG" ]; then
+              echo "Skipping request ${REQUEST_ID}: no workspace_slug"
+              continue
+            fi
             
-            # Dispatch drift-plan workflow
+            # Dispatch drift_plan workflow (underscore in filename)
             curl -X POST \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/drift-plan.yml/dispatches" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/drift_plan.yml/dispatches" \
               -d "{
                 \"ref\": \"main\",
                 \"inputs\": {
-                  \"request_id\": \"${REQUEST_ID}\",
-                  \"environment\": \"${ENV}\"
+                  \"workspace_key\": \"${WS_KEY}\",
+                  \"workspace_slug\": \"${WS_SLUG}\"
                 }
               }" || echo "Failed to dispatch for ${REQUEST_ID} (non-fatal)"
             
